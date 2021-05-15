@@ -1,8 +1,14 @@
 import React from "react";
 import ReactDom from "react-dom";
+import { Provider } from 'react-redux'
+import App from './App';
+import store from './store';
+
 import "./style.scss";
 
 ReactDom.render(
-  <h1>HI</h1>,
+  <Provider store={store}>
+    <App />
+  </Provider>,
   document.getElementById("root")
 );
