@@ -1,34 +1,28 @@
-import React, { useRef } from "react";
-import { useFirestoreCollectionData, useFirestore, useFirestoreDocData } from 'reactfire';
-import Button from './Components/Button';
+import React, { useRef, useState } from "react";
+import { useFirestore } from 'reactfire';
 import Chat from './Components/Chat';
 import List from './Components/List';
 
 const App = () => {
+  const [currentChat, setCurrentChat] = useState('');
   const input = useRef();
   const collection = useFirestore()
-  .collection('chats').doc('X0pHYHf1iqfEaeymRf8H').collection('messages');
-  const query = collection.orderBy("date", "asc")
-  const {data: messages, status} = useFirestoreCollectionData(query, {
-    idField: 'id'
-  });
-
-  const handleClick = () => {
-    saveMessage(input.current.value);
-  }
+  .collection('chats');
 
   const handlePress = ({ target, keyCode }) => {
+    console.log('heyyy');
     if(keyCode === 13) saveMessage(target.value);
   }
 
   const saveMessage = (value) => {
-    if(value) {
+    if(value && currentChat) {
       const message = {
         user: 1,
         message: value,
         date: new Date()
       }
-      collection.add(message);
+      const messageCollection = collection.doc(currentChat).collection('messages');
+      messageCollection.add(message);
       input.current.value = '';
     }
   }
@@ -37,11 +31,14 @@ const App = () => {
     return <h1>loading</h1>
   }
 
+  const handleClickList = (value) => {
+    setCurrentChat(value);
+  }
+
   return <div className="container">
-    <Chat messages={messages}/>
-    <List messages={["test"]} />
-    {/* <Button name="send" handleClick={handleClick} /> */}
-    <input className="input" type="text" onKeyUp={handlePress} ref={input}/>
+    <Chat collection={collection} currentChat={currentChat} />
+    <List collection={collection} handleClick={handleClickList} />
+    {currentChat && <input className="input" type="text" onKeyUp={handlePress} ref={input}/>}
   </div>;
 }
 
