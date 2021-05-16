@@ -1,47 +1,48 @@
-import React, { Component } from "react";
-import { connect } from 'react-redux';
+import React, { useRef } from "react";
+import { useFirestoreCollectionData, useFirestore, useFirestoreDocData } from 'reactfire';
 import Button from './Components/Button';
-import { add } from './reducer';
+import Chat from './Components/Chat';
+import List from './Components/List';
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.input = React.createRef();
+const App = () => {
+  const input = useRef();
+  const collection = useFirestore()
+  .collection('chats').doc('X0pHYHf1iqfEaeymRf8H').collection('messages');
+  const query = collection.orderBy("date", "asc")
+  const {data: messages, status} = useFirestoreCollectionData(query, {
+    idField: 'id'
+  });
+
+  const handleClick = () => {
+    saveMessage(input.current.value);
   }
 
-  handleClick = () => {
-    this.saveMessage(this.input.current.value);
+  const handlePress = ({ target, keyCode }) => {
+    if(keyCode === 13) saveMessage(target.value);
   }
 
-  handlePress = ({ target, keyCode }) => {
-    if(keyCode === 13) this.saveMessage(target.value);
-  }
-
-  saveMessage = (value) => {
+  const saveMessage = (value) => {
     if(value) {
-      this.props.add(value);
-      this.input.current.value = '';
+      const message = {
+        user: 1,
+        message: value,
+        date: new Date()
+      }
+      collection.add(message);
+      input.current.value = '';
     }
   }
 
-  render() {
-    return <>
-      <h1>Hello from React</h1>
-      <Button name="send" handleClick={this.handleClick} />
-      <input type="text" onKeyUp={this.handlePress} ref={this.input}/>
-      <ul>
-        {this.props.messages.map((message, index) => <li key={`${index}-${message}`}>{message}</li>)}
-      </ul>
-    </>;
+  if(status === 'loading') {
+    return <h1>loading</h1>
   }
+
+  return <div className="container">
+    <Chat messages={messages}/>
+    <List messages={["test"]} />
+    {/* <Button name="send" handleClick={handleClick} /> */}
+    <input className="input" type="text" onKeyUp={handlePress} ref={input}/>
+  </div>;
 }
 
-const mapStateToProps = (state, ownProps) => ({
-  messages: state.messages
-});
-
-const mapDispatchToProps = (dispatch) => ({
-  add: (message) => dispatch(add(message))
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(App);
+export default App;
